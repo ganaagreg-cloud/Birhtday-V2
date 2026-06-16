@@ -117,6 +117,7 @@
     .tl-item.right .polaroid { transform:rotate(1.6deg); }
     .polaroid:hover { transform:rotate(0deg) scale(1.04) !important; box-shadow:0 0 0 1px rgba(212,175,55,.32),0 12px 42px rgba(28,26,23,.12); }
     .polaroid img { width:175px; height:125px; object-fit:cover; background:#e8ddd0; }
+    .polaroid.portrait img { width:175px; height:auto; object-fit:unset; }
 
     /* ── CLOSING ──────────────────────────── */
     #closing { background:var(--dark); padding:11vh 2rem 12vh; text-align:center; }
@@ -177,6 +178,7 @@
       .tl-item.left  .tl-dot,    .tl-item.right .tl-dot     { grid-column:1; grid-row:1; }
       .tl-item.left  .tl-void,   .tl-item.right .tl-void    { display:none; }
       .polaroid img { width:135px; height:98px; }
+      .polaroid.portrait img { width:135px; height:auto; }
       #audio-btn { bottom:1rem; right:1rem; }
       .env-paper { padding:1.4rem 1.4rem 1.8rem; }
     }
@@ -463,7 +465,7 @@
       <div class="tl-content">
         <h3>Хоёулаа үерхэж эхэлсэн өдөр</h3>
         <p class="tl-desc">✏️ Бидний харилцааны албан ёсны эхлэл. Чиний минь ухаалаг зан, нандин харцанд гүнээ дурлаж билээ</p>
-        <div class="polaroid"><img src="Images/Our official starting point.JPG" alt="" loading="lazy"></div>
+        <div class="polaroid portrait"><img src="Images/Our official starting point.JPG" alt="" loading="lazy"></div>
       </div>
       <div class="tl-dot"><div class="tl-dot-circle"></div><span class="tl-date">✏️ 2024-02-14</span></div>
       <div class="tl-void"></div>
@@ -474,14 +476,14 @@
       <div class="tl-content">
         <h3>Хамтдаа туулсан анхны "галзуу" дурсамж</h3>
         <p class="tl-desc">✏️ Өндрөөс айдаг гэдгээ мэдэж харин чамайг айдгүй гэдгийг мэдсэн өдөр</p>
-        <div class="polaroid"><img src="Images/our first adventure.jpg" alt="" loading="lazy"></div>
+        <div class="polaroid portrait"><img src="Images/our first adventure.jpg" alt="" loading="lazy"></div>
       </div>
     </div>
     <div class="tl-item left">
       <div class="tl-content">
         <h3>Нэг л мэдхэд </h3>
         <p class="tl-desc">✏️ Чамтайгаа ирээдүйгээ бүтээж хамтдаа урагшилан энэ хорвоог хамтдаа туулж өвөө эмээ болж чадна гэдгээ мэдэрсэн нандин дурсамж</p>
-        <div class="polaroid"><img src="Images/When I Knew.JPG" alt="" loading="lazy"></div>
+        <div class="polaroid portrait"><img src="Images/When I Knew.JPG" alt="" loading="lazy"></div>
       </div>
       <div class="tl-dot"><div class="tl-dot-circle"></div><span class="tl-date">✏️ 2024-09-06</span></div>
       <div class="tl-void"></div>
