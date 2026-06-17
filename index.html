@@ -454,7 +454,7 @@
     <div class="photo-card tall"  data-idx="4"><img src="Images/IMG_3982.JPG" alt="Memory 5" loading="lazy"></div>
     <div class="photo-card wide"  data-idx="5"><img src="Images/Anh gadaad.jpg" alt="Memory 6" loading="lazy"></div>
     <div class="photo-card sm"    data-idx="6"><img src="Images/Borootoi odor.jpg" alt="Memory 7" loading="lazy"></div>
-    <div style="width:20vw;flex-shrink:0;"></div>
+    <div style="width:3vw;flex-shrink:0;"></div>
   </div>
 </section>
 
@@ -497,7 +497,7 @@
       <img src="Images/Friend%205.jpeg" alt="Нараа" loading="lazy">
       <div class="card-name"><span class="card-name-label">Нараа</span><span class="card-name-rel">Найз</span></div>
     </div>
-    <div style="width:20vw;flex-shrink:0;"></div>
+    <div style="width:3vw;flex-shrink:0;"></div>
   </div>
 </section>
 
@@ -712,7 +712,7 @@
     const section = document.getElementById('archive-section');
     if (isMob) { section.style.overflowX = 'auto'; }
     else {
-      const getDist = () => Math.max(0, track.scrollWidth - window.innerWidth);
+      const getDist = () => Math.max(0, track.lastElementChild.getBoundingClientRect().right - window.innerWidth);
       if (getDist() >= 10) gsap.to(track, { x:() => -getDist(), ease:'none', scrollTrigger:{ trigger:section, start:'top top', end:()=>'+=' + getDist(), pin:true, scrub:1.2, invalidateOnRefresh:true } });
     }
     // Friends section
@@ -720,7 +720,7 @@
     const fsection = document.getElementById('friends-section');
     if (isMob) { fsection.style.overflowX = 'auto'; }
     else {
-      const getFDist = () => Math.max(0, ftrack.scrollWidth - window.innerWidth);
+      const getFDist = () => Math.max(0, ftrack.lastElementChild.getBoundingClientRect().right - window.innerWidth);
       if (getFDist() >= 10) gsap.to(ftrack, { x:() => -getFDist(), ease:'none', scrollTrigger:{ trigger:fsection, start:'top top', end:()=>'+=' + getFDist(), pin:true, scrub:1.2, invalidateOnRefresh:true } });
     }
   });
