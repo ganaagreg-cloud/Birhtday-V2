@@ -129,11 +129,6 @@
     .closing-title { font-family:var(--serif); font-style:italic; font-size:clamp(1.8rem,4vw,3.2rem); font-weight:300; color:rgba(253,251,247,.84); line-height:1.45; margin-bottom:1.6rem; }
     .closing-sig { font-size:.58rem; letter-spacing:.35em; text-transform:uppercase; color:var(--gold); opacity:.75; }
 
-    /* ── AUDIO BUTTON ─────────────────────── */
-    #audio-btn { position:fixed; bottom:1.8rem; right:1.8rem; z-index:999; display:flex; align-items:center; gap:.7em; background:rgba(11,9,7,.82); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(212,175,55,.28); color:rgba(253,251,247,.72); font-family:var(--sans); font-size:.56rem; letter-spacing:.3em; text-transform:uppercase; padding:.9em 1.5em; cursor:pointer; outline:none; transition:border-color .35s,color .35s; }
-    #audio-btn:hover { border-color:var(--gold); color:var(--cream); }
-    #audio-btn svg { width:11px; height:11px; flex-shrink:0; }
-
     /* ── ENVELOPE OVERLAY ─────────────────── */
     #env-overlay { position:fixed; inset:0; z-index:2000; background:rgba(8,4,18,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; pointer-events:none; transition:opacity .45s; overflow-y:auto; }
     #env-overlay.active { opacity:1; pointer-events:all; }
@@ -598,13 +593,6 @@
 <audio id="bg-audio" loop preload="none">
   <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
 </audio>
-<button id="audio-btn" aria-label="Toggle music">
-  <svg id="icon-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-  <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-  <span id="audio-label">Play Theme</span>
-</button>
-
-
 <!-- ▓▓▓ ENVELOPE OVERLAY ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <div id="env-overlay">
   <div class="env-wrap" id="env-wrap">
@@ -668,6 +656,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="https://player.vimeo.com/api/player.js"></script>
 
 <script>
   gsap.registerPlugin(ScrollTrigger);
@@ -712,6 +701,21 @@
       vPoster.style.opacity = '0';
       vPoster.style.pointerEvents = 'none';
       setTimeout(() => { vPoster.style.display = 'none'; }, 420);
+
+      // Duck and pause background audio
+      videoIsPlaying = true;
+      fadeVolume(aud, 0, 800);
+      setTimeout(() => { if (videoIsPlaying) aud.pause(); }, 820);
+
+      // Resume audio when video pauses or ends
+      const player = new Vimeo.Player(vIframe);
+      function resumeAudioFromVideo() {
+        videoIsPlaying = false;
+        aud.volume = 0;
+        aud.play().then(() => fadeVolume(aud, FULL_VOL, 1500)).catch(() => {});
+      }
+      player.on('pause', resumeAudioFromVideo);
+      player.on('ended', resumeAudioFromVideo);
     });
   }
 
@@ -765,13 +769,41 @@
     document.querySelectorAll('.tl-item').forEach(el => tlObs.observe(el));
   })();
 
-  /* ── Audio ──────────────────────────────── */
-  const aud=document.getElementById('bg-audio'), iPlay=document.getElementById('icon-play'), iPause=document.getElementById('icon-pause'), aLbl=document.getElementById('audio-label');
-  let playing=false;
-  document.getElementById('audio-btn').addEventListener('click',()=>{
-    if(!playing){ aud.volume=0; aud.play().then(()=>{ playing=true; iPlay.style.display='none'; iPause.style.display=''; aLbl.textContent='Pause Theme'; let v=0; const fi=setInterval(()=>{ if(v<.32){aud.volume=v=Math.min(.32,v+.007);}else clearInterval(fi); },45); }).catch(()=>{ aLbl.textContent='— no audio —'; }); }
-    else { let v=aud.volume; const fo=setInterval(()=>{ if(v>.007){aud.volume=v=Math.max(0,v-.008);}else{ clearInterval(fo); aud.pause(); playing=false; iPlay.style.display=''; iPause.style.display='none'; aLbl.textContent='Play Theme'; } },45); }
-  });
+  /* ── Audio System ───────────────────────── */
+  const aud = document.getElementById('bg-audio');
+  const FULL_VOL = 0.32;
+  const DUCK_VOL = FULL_VOL * 0.25;
+  let videoIsPlaying = false;
+  let _fadeRaf = null;
+
+  function fadeVolume(audio, target, durationMs) {
+    if (_fadeRaf) cancelAnimationFrame(_fadeRaf);
+    const startVol = audio.volume;
+    const diff = target - startVol;
+    if (Math.abs(diff) < 0.001) return;
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min((now - startTime) / durationMs, 1);
+      audio.volume = Math.max(0, Math.min(1, startVol + diff * t));
+      if (t < 1) _fadeRaf = requestAnimationFrame(step);
+      else _fadeRaf = null;
+    }
+    _fadeRaf = requestAnimationFrame(step);
+  }
+
+  function startAudio() {
+    if (!aud.paused) return;
+    aud.volume = 0;
+    aud.play().then(() => fadeVolume(aud, FULL_VOL, 1500)).catch(() => {
+      function onFirstInteraction() {
+        aud.volume = 0;
+        aud.play().then(() => fadeVolume(aud, FULL_VOL, 1500)).catch(() => {});
+      }
+      document.addEventListener('click',  onFirstInteraction, { once: true, passive: true });
+      document.addEventListener('scroll', onFirstInteraction, { once: true, passive: true });
+    });
+  }
+  startAudio();
 
   /* ── ENVELOPE OVERLAY ───────────────────── */
   // ✏️ Edit each message to match the corresponding photo
@@ -852,6 +884,7 @@
       sig.classList.add('show');
     }), 2150);
     document.body.style.overflow = 'hidden';
+    if (!aud.paused) fadeVolume(aud, DUCK_VOL, 500);
   }
 
   function closeEnv() {
@@ -861,6 +894,14 @@
     wrap.classList.remove('appeared');
     contentEl.classList.remove('revealed');
     setTimeout(() => { ov.classList.remove('active'); document.body.style.overflow = ''; }, 550);
+    if (!videoIsPlaying) {
+      if (aud.paused) {
+        aud.volume = 0;
+        aud.play().then(() => fadeVolume(aud, FULL_VOL, 800)).catch(() => {});
+      } else {
+        fadeVolume(aud, FULL_VOL, 800);
+      }
+    }
   }
 
   function typeWrite(el, text, onDone) {
