@@ -203,7 +203,7 @@
       .tl-item.left,
       .tl-item.right { --tl-tilt:0deg; }
       .tl-item.left  .tl-content,
-      .tl-item.right .tl-content { grid-column:2; grid-row:1; text-align:left; padding-left:1rem; padding-right:0; }
+      .tl-item.right .tl-content { grid-column:2; grid-row:1; text-align:left; padding-left:1rem; padding-right:0; min-width:0; overflow:hidden; }
       .tl-item.left  .tl-dot,
       .tl-item.right .tl-dot     { grid-column:1; grid-row:1; justify-content:center; }
       .tl-item.left  .tl-void,
@@ -215,9 +215,9 @@
       .tl-date { font-size:12px; white-space:normal; max-width:38px; line-height:1.4; }
 
       /* Polaroid — full bleed on mobile */
-      .polaroid { display:block; max-width:85vw; margin:0 auto; padding:10px 10px 34px; }
-      .polaroid img { width:calc(85vw - 20px); height:auto; max-height:320px; object-fit:cover; }
-      .polaroid.portrait img { width:calc(85vw - 20px); height:auto; max-height:none; }
+      .polaroid { display:block; max-width:100%; margin:0 auto; padding:10px 10px 34px; }
+      .polaroid img { width:100%; height:auto; max-height:320px; object-fit:cover; }
+      .polaroid.portrait img { width:100%; height:auto; max-height:none; }
 
       /* ── Audio button ──────────────────────── */
       #audio-btn { bottom:1rem; right:1rem; min-height:44px; }
@@ -236,9 +236,9 @@
     @media (max-width: 400px) {
       .h-title { font-size:clamp(26px,7.5vw,42px); padding:0 1rem; }
       .tl-items { padding:0 .6rem; }
-      .polaroid img { width:calc(90vw - 20px); }
-      .polaroid.portrait img { width:calc(90vw - 20px); }
-      .polaroid { max-width:90vw; }
+      .polaroid img { width:100%; }
+      .polaroid.portrait img { width:100%; }
+      .polaroid { max-width:100%; }
       .env-wrap { width:95vw; }
       .env-paper { padding:1.2rem 1rem 1.6rem; }
     }
@@ -590,7 +590,7 @@
 
 <!-- ▓▓▓ AUDIO ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <!-- ✏️ Replace src with your MP3 (free piano: pixabay.com/music) -->
-<audio id="bg-audio" loop preload="none">
+<audio id="bg-audio" loop preload="auto">
   <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
 </audio>
 <!-- ▓▓▓ ENVELOPE OVERLAY ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
@@ -774,21 +774,27 @@
   const FULL_VOL = 0.32;
   const DUCK_VOL = FULL_VOL * 0.25;
   let videoIsPlaying = false;
-  let _fadeRaf = null;
+  let _fadeTimer = null;
 
   function fadeVolume(audio, target, durationMs) {
-    if (_fadeRaf) cancelAnimationFrame(_fadeRaf);
+    if (_fadeTimer) { clearInterval(_fadeTimer); _fadeTimer = null; }
     const startVol = audio.volume;
     const diff = target - startVol;
-    if (Math.abs(diff) < 0.001) return;
-    const startTime = performance.now();
-    function step(now) {
-      const t = Math.min((now - startTime) / durationMs, 1);
-      audio.volume = Math.max(0, Math.min(1, startVol + diff * t));
-      if (t < 1) _fadeRaf = requestAnimationFrame(step);
-      else _fadeRaf = null;
-    }
-    _fadeRaf = requestAnimationFrame(step);
+    if (Math.abs(diff) < 0.001) { audio.volume = target; return; }
+    const TICK = 25;
+    const steps = Math.max(1, Math.round(durationMs / TICK));
+    const stepSize = diff / steps;
+    let count = 0;
+    _fadeTimer = setInterval(() => {
+      count++;
+      if (count >= steps) {
+        audio.volume = Math.max(0, Math.min(1, target));
+        clearInterval(_fadeTimer);
+        _fadeTimer = null;
+      } else {
+        audio.volume = Math.max(0, Math.min(1, startVol + stepSize * count));
+      }
+    }, TICK);
   }
 
   function startAudio() {
@@ -796,6 +802,7 @@
     aud.volume = 0;
     aud.play().then(() => fadeVolume(aud, FULL_VOL, 1500)).catch(() => {
       function onFirstInteraction() {
+        if (!aud.paused) return;
         aud.volume = 0;
         aud.play().then(() => fadeVolume(aud, FULL_VOL, 1500)).catch(() => {});
       }
